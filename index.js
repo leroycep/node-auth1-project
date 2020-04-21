@@ -32,6 +32,20 @@ server.post("/api/register", checkCredentialsObject, (req, res) => {
     });
 });
 
+server.post("/api/login", checkCredentialsObject, (req, res) => {
+  db("users")
+    .select()
+    .where({ username: req.body.username })
+    .first()
+    .then((user) => {
+      if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
+        res.status(401).json({ message: "You shall not pass!" });
+        return;
+      }
+      res.status(200).json({ message: `welcome, ${user.username}` });
+    });
+});
+
 function checkCredentialsObject(req, res, next) {
   if (req.body.password === undefined || req.body.username === undefined) {
     res.status(400).json({ message: "username and password required" });
