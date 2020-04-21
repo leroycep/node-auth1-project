@@ -55,8 +55,11 @@ server.post("/api/login", checkCredentialsObject, (req, res) => {
         res.status(401).json({ message: "You shall not pass!" });
         return;
       }
-      req.session.userid = user.id;
-      res.status(200).json({ message: `welcome, ${user.username}` });
+      req.session.user = user;
+      res
+        .status(200)
+        .cookie("user-id", user.id)
+        .json({ message: `welcome, ${user.username}` });
     });
 });
 
@@ -81,8 +84,7 @@ function checkCredentialsObject(req, res, next) {
 }
 
 function checkLoggedIn(req, res, next) {
-  console.log(req.session);
-  if (req.session.userid === undefined) {
+  if (req.session.user === undefined) {
     res.status(401).json({ message: "You shall not pass!" });
     return;
   }
