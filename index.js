@@ -9,6 +9,19 @@ const db = require("./data/model.js");
 const server = express();
 
 server.use(express.json());
+server.use(
+  session({
+    name: "auth1-session",
+    secret: "rock fact",
+    cookie: {
+      maxAge: 60 * 60 * 1000,
+      secure: false,
+    },
+    httpOnly: true,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 server.post("/api/register", checkCredentialsObject, (req, res) => {
   const user = {
@@ -42,13 +55,35 @@ server.post("/api/login", checkCredentialsObject, (req, res) => {
         res.status(401).json({ message: "You shall not pass!" });
         return;
       }
+      req.session.userid = user.id;
       res.status(200).json({ message: `welcome, ${user.username}` });
+    });
+});
+
+server.get("/api/users", checkLoggedIn, (req, res) => {
+  db("users")
+    .select()
+    .then((users) => {
+      res.status(200).json(users);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ message: "couldn't get list of users" });
     });
 });
 
 function checkCredentialsObject(req, res, next) {
   if (req.body.password === undefined || req.body.username === undefined) {
     res.status(400).json({ message: "username and password required" });
+    return;
+  }
+  next();
+}
+
+function checkLoggedIn(req, res, next) {
+  console.log(req.session);
+  if (req.session.userid === undefined) {
+    res.status(401).json({ message: "You shall not pass!" });
     return;
   }
   next();
